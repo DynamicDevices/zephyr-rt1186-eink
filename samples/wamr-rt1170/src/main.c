@@ -7,7 +7,9 @@
 #include <zephyr/sys/printk.h>
 
 #include "wasm_export.h"
-#include "aesl_payload.h"
+#include "wasm_package.h"
+#include "aesl_package.h"
+#include "aesl_public_key.h"
 
 #define WASM_STACK_SIZE 8192U
 #define WASM_HEAP_SIZE  8192U
@@ -40,8 +42,37 @@ static NativeSymbol host_api[] = {
     { "aesl_label_set", host_label_set, "(ii)i", NULL },
 };
 
+static int verify_rejection_paths(void)
+{
+    struct aesl_wasm_package_view view;
+    uint8_t tampered[sizeof(aesl_wasm_package)];
+    uint8_t untrusted_key[sizeof(aesl_wasm_public_key)];
+
+    memcpy(tampered, aesl_wasm_package, sizeof(tampered));
+    tampered[AESL_WASM_PACKAGE_HEADER_SIZE] ^= 0x01;
+    if (aesl_wasm_package_verify(tampered, sizeof(tampered),
+                                 aesl_wasm_public_key,
+                                 sizeof(aesl_wasm_public_key), &view) == 0) {
+        printk("WAMR FAIL: tampered package accepted\n");
+        return -1;
+    }
+    printk("PASS: rejected tampered WASM package\n");
+
+    memcpy(untrusted_key, aesl_wasm_public_key, sizeof(untrusted_key));
+    untrusted_key[sizeof(untrusted_key) - 1] ^= 0x01;
+    if (aesl_wasm_package_verify(aesl_wasm_package,
+                                 sizeof(aesl_wasm_package), untrusted_key,
+                                 sizeof(untrusted_key), &view) == 0) {
+        printk("WAMR FAIL: untrusted signer accepted\n");
+        return -1;
+    }
+    printk("PASS: rejected untrusted WASM signer\n");
+    return 0;
+}
+
 static int run_payload(void)
 {
+    struct aesl_wasm_package_view package;
     RuntimeInitArgs init_args;
     wasm_module_t module = NULL;
     wasm_module_inst_t instance = NULL;
@@ -64,8 +95,19 @@ static int run_payload(void)
         return -1;
     }
 
-    module = wasm_runtime_load((uint8_t *)aesl_wasm_payload,
-                               sizeof(aesl_wasm_payload), error,
+    rc = aesl_wasm_package_verify(aesl_wasm_package,
+                                  sizeof(aesl_wasm_package),
+                                  aesl_wasm_public_key,
+                                  sizeof(aesl_wasm_public_key), &package);
+    if (rc != 0) {
+        printk("WAMR FAIL: package verification=%d\n", rc);
+        goto out;
+    }
+    printk("WAMR PACKAGE VERIFIED: version=%u bytes=%u\n",
+           package.version, (unsigned int)package.payload_size);
+
+    module = wasm_runtime_load((uint8_t *)package.payload,
+                               package.payload_size, error,
                                sizeof(error));
     if (module == NULL) {
         printk("WAMR FAIL: load: %s\n", error);
@@ -119,6 +161,9 @@ int main(void)
     int rc;
 
     printk("WAMR RT1170: starting isolated module\n");
+    if (verify_rejection_paths() != 0) {
+        return -1;
+    }
     rc = run_payload();
     if (rc == 0) {
         printk("PASS: WAMR capability host API\n");

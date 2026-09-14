@@ -20,6 +20,9 @@ WAMR Capability Module Should Run On RT1170 ARM ELF
     Start Emulation
     Wait For Line On Uart     Booting Zephyr OS                       timeout=30
     Wait For Line On Uart     WAMR RT1170: starting isolated module    timeout=30
+    Wait For Line On Uart     PASS: rejected tampered WASM package     timeout=30
+    Wait For Line On Uart     PASS: rejected untrusted WASM signer     timeout=30
+    Wait For Line On Uart     WAMR PACKAGE VERIFIED: version=7         timeout=30
     Wait For Line On Uart     WAMR HOST ALLOW: label=1 value=42       timeout=30
     Wait For Line On Uart     WAMR HOST DENY: label=99 value=42       timeout=30
     Wait For Line On Uart     PASS: WAMR capability host API          timeout=30

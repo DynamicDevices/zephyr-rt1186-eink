@@ -30,7 +30,10 @@ ZEPHYR_SDK_INSTALL_DIR=/home/ajlennon/zephyr-sdk-1.0.1 \
 
 The test generates its platform from the build's `zephyr.dts`, derives VTOR,
 SP, and PC from the exact ELF, and requires UART evidence for one allowed host
-call, one denied call, and the final PASS marker.
+call, one denied call, and the final PASS marker. Its board overlay disables
+the unmodelled CAAM entropy peripheral and selects Zephyr's deterministic test
+RNG. That setting is simulator-only; the product image must use hardware
+entropy on the EVK/custom board.
 
 ## Signed payload tool
 
