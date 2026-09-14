@@ -4,10 +4,14 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PAYLOAD="${PAYLOAD:-${ROOT}/build-wamr-rt1170/wasm/aesl_payload.wasm}"
-[[ -f "${PAYLOAD}" ]] || { echo "missing ${PAYLOAD}; build WAMR first" >&2; exit 1; }
-
 TEST_DIR="$(mktemp -d)"
 trap 'rm -rf "${TEST_DIR}"' EXIT
+
+if [[ ! -f "${PAYLOAD}" ]]; then
+  PAYLOAD="${TEST_DIR}/minimal.wasm"
+  python3 -c 'import pathlib, sys; pathlib.Path(sys.argv[1]).write_bytes(b"\0asm\x01\0\0\0")' \
+    "${PAYLOAD}"
+fi
 
 TOOL="${ROOT}/scripts/wasm-package.py"
 "${TOOL}" keygen --private "${TEST_DIR}/signing.pem" --public "${TEST_DIR}/signing.pub"
@@ -29,4 +33,10 @@ if "${TOOL}" verify --package "${TEST_DIR}/corrupt.wpkg" --public "${TEST_DIR}/s
   exit 1
 fi
 
-echo "PASS: signed WASM package accepts the trusted signer and rejects tampering/wrong signer"
+if "${TOOL}" package --wasm "${PAYLOAD}" --output "${TEST_DIR}/v0.wpkg" \
+    --key "${TEST_DIR}/signing.pem" --version 0; then
+  echo "zero version was accepted" >&2
+  exit 1
+fi
+
+echo "PASS: signed WASM package accepts its trusted signer and rejects tampering, wrong signer, and version zero"
