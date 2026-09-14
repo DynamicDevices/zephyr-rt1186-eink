@@ -34,6 +34,60 @@ if(CONFIG_MENDER_APP_NOOP_UPDATE_MODULE MATCHES "y")
     target_sources(app PRIVATE src/modules/noop-update-module.c)
 endif()
 
+if(CONFIG_APP_WAMR_OTA)
+    # native_sim builds WAMR as strict C17; expose strtok_r from the host libc.
+    if(TARGET wamr AND CONFIG_ARCH_POSIX)
+        target_compile_definitions(wamr PRIVATE _POSIX_C_SOURCE=200809L)
+    endif()
+    # Environment fallback is required for sysbuild: ordinary top-level CMake
+    # cache variables are not automatically forwarded to child images.
+    if((NOT DEFINED WASM_SIGNING_PUBLIC_KEY_FILE OR
+        WASM_SIGNING_PUBLIC_KEY_FILE STREQUAL "") AND
+       DEFINED ENV{WASM_SIGNING_PUBLIC_KEY_FILE})
+        set(WASM_SIGNING_PUBLIC_KEY_FILE
+            "$ENV{WASM_SIGNING_PUBLIC_KEY_FILE}")
+    endif()
+    if(NOT DEFINED WASM_SIGNING_PUBLIC_KEY_FILE OR
+       NOT EXISTS "${WASM_SIGNING_PUBLIC_KEY_FILE}")
+        message(FATAL_ERROR
+            "APP_WAMR_OTA requires -DWASM_SIGNING_PUBLIC_KEY_FILE=<65-byte P-256 public key>")
+    endif()
+    file(SIZE "${WASM_SIGNING_PUBLIC_KEY_FILE}" WASM_PUBLIC_KEY_SIZE)
+    if(NOT WASM_PUBLIC_KEY_SIZE EQUAL 65)
+        message(FATAL_ERROR "WASM signing public key must be exactly 65 bytes")
+    endif()
+
+    set(WASM_PUBLIC_KEY_INC
+        "${ZEPHYR_BINARY_DIR}/include/generated/wasm_signing_public_key.inc")
+    add_custom_target(wasm_signing_public_key DEPENDS "${WASM_SIGNING_PUBLIC_KEY_FILE}")
+    add_dependencies(app wasm_signing_public_key)
+    generate_inc_file_for_target(wasm_signing_public_key
+        "${WASM_SIGNING_PUBLIC_KEY_FILE}" "${WASM_PUBLIC_KEY_INC}")
+
+    if(CONFIG_APP_WAMR_OTA_SELFTEST)
+        foreach(version V1 V2)
+            set(package_var "WASM_SELFTEST_PACKAGE_${version}_FILE")
+            if(NOT DEFINED ${package_var} OR NOT EXISTS "${${package_var}}")
+                message(FATAL_ERROR
+                    "APP_WAMR_OTA_SELFTEST requires -D${package_var}=<signed .wpkg>")
+            endif()
+            set(package_inc
+                "${ZEPHYR_BINARY_DIR}/include/generated/wasm_selftest_${version}.inc")
+            generate_inc_file_for_target(wasm_signing_public_key
+                "${${package_var}}" "${package_inc}")
+        endforeach()
+    endif()
+
+    target_sources(app PRIVATE
+        src/wasm/wasm_update_module.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/../lib/wasm/wasm_package.c
+    )
+    target_include_directories(app PRIVATE
+        src/wasm
+        ${CMAKE_CURRENT_SOURCE_DIR}/../lib/wasm
+    )
+endif()
+
 if(CONFIG_APP_WIFI_SIM)
     target_sources(app PRIVATE src/net/wifi_sim.c)
 endif()

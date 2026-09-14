@@ -35,9 +35,28 @@ if [[ -z "${RENODE_TEST}" && -x "${HOME}/.local/opt/renode-portable/renode-test"
 fi
 [[ -n "${RENODE_TEST}" ]] || { echo "renode-test not found" >&2; exit 1; }
 
+# Renode's Python sources use PEP 585 built-in generics (Python 3.9+). Some
+# developer shells still put an older Anaconda Python first on PATH.
+LOCAL_RENODE_PYTHON="${ROOT}/.tools/renode-py/bin/python3"
+if [[ -z "${RENODE_PYTHON:-}" ]]; then
+  if [[ -x "${LOCAL_RENODE_PYTHON}" ]]; then
+    RENODE_PYTHON="${LOCAL_RENODE_PYTHON}"
+  elif python3 -c 'import sys, robot; assert sys.version_info >= (3, 9)' \
+      2>/dev/null; then
+    RENODE_PYTHON="$(command -v python3)"
+  else
+    RENODE_PYTHON="/usr/bin/python3"
+  fi
+fi
+[[ -x "${RENODE_PYTHON}" ]] || { echo "missing Python: ${RENODE_PYTHON}" >&2; exit 1; }
+"${RENODE_PYTHON}" -c 'import sys, robot; assert sys.version_info >= (3, 9)' || {
+  echo "Renode needs Python 3.9+ and its tests/requirements.txt packages" >&2
+  exit 1
+}
+
 echo "ELF=${ELF}"
 echo "VTOR=${VTOR} SP=${SP} PC=${PC}"
-exec "${RENODE_TEST}" \
+PATH="$(dirname "${RENODE_PYTHON}"):${PATH}" exec "${RENODE_TEST}" \
   --variable "ROOT:${ROOT}" \
   --variable "REPL:@${REPL}" \
   --variable "ELF:@${ELF}" \

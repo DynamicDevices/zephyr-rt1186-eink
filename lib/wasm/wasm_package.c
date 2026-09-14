@@ -42,6 +42,10 @@ int aesl_wasm_package_verify(const uint8_t *package, size_t package_size,
         return -ENOTSUP;
     }
 
+    if (sys_get_le32(package + 12) == 0U) {
+        return -EBADMSG;
+    }
+
     payload_size = sys_get_le32(package + 16);
     if ((size_t)payload_size != package_size - AESL_WASM_PACKAGE_HEADER_SIZE) {
         return -EBADMSG;

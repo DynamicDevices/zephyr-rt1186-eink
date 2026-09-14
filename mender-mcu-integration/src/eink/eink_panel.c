@@ -96,6 +96,7 @@ static bool probe_t2000(struct eink_panel_info *out)
 
 int eink_panel_detect(void)
 {
+	bool found_panel = false;
 	struct eink_panel_info found = {
 		.kind = EINK_PANEL_NONE,
 		.name = "none",
@@ -111,16 +112,16 @@ int eink_panel_detect(void)
 #if defined(CONFIG_APP_EINK_T2000)
 	/* Prefer hot-plug TCON when this image includes the USB host stack. */
 	if (probe_t2000(&found)) {
-		goto done;
+		found_panel = true;
 	}
 #endif
 #if defined(CONFIG_EL133UF1)
-	if (probe_el133(&found)) {
-		goto done;
+	if (!found_panel && probe_el133(&found)) {
+		found_panel = true;
 	}
 #endif
 
-done:
+	ARG_UNUSED(found_panel);
 	s_info = found;
 	s_detected = true;
 	if (s_info.kind == EINK_PANEL_NONE) {

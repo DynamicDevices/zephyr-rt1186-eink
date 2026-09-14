@@ -26,3 +26,4 @@ WAMR Capability Module Should Run On RT1170 ARM ELF
     Wait For Line On Uart     WAMR HOST ALLOW: label=1 value=42       timeout=30
     Wait For Line On Uart     WAMR HOST DENY: label=99 value=42       timeout=30
     Wait For Line On Uart     PASS: WAMR capability host API          timeout=30
+    Wait For Line On Uart     WAMR elapsed_ms=                        timeout=30
