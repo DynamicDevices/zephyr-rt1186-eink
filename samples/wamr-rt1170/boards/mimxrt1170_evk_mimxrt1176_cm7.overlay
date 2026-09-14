@@ -1,0 +1,10 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/*
+ * Renode does not model the RT1170 CAAM entropy block. This proof image uses
+ * Zephyr's deterministic test RNG so PSA verification can run in simulation.
+ * The product configuration must keep the hardware entropy source enabled.
+ */
+&caam {
+    status = "disabled";
+};

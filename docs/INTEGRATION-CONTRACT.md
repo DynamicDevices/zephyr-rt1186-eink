@@ -13,6 +13,7 @@ Parallel agents must not share this checkout. Rule: workspace
 | `zephyr-rt1170-eink` | *(primary)* | `/data_drive/dd/zephyr-rt1170-eink` | `main` | Clean primary; west topdir |
 | `zephyr-rt1170-eink` | `frdm-ocram-enroll` | `/data_drive/dd/zephyr-rt1170-eink-frdm-ocram-enroll` | `feat/frdm-cm33-ocram-enroll` | FRDM OCRAM enroll opt-in; sibling; do not share |
 | `zephyr-rt1170-eink` | `spectra6-frdm` | `/data_drive/dd/zephyr-rt1170-eink-spectra6-frdm` | `feat/frdm-imxrt1186-el133` | FRDM-IMXRT1186 EL133UF1 SPI lab |
+| `zephyr-rt1170-eink` | `wamr-poc` | `/data_drive/dd/zephyr-rt1170-eink-wamr-poc` | `feature/wamr-mender-poc` | WAMR runtime + Mender WASM payload OTA; simulator first |
 
 When adding a lane:
 

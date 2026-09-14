@@ -4,12 +4,15 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   ignore-and-source-policy:
     runs-on: [self-hosted, Linux]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Workspace safety (CI mode)
         run: python3 scripts/check-workspace-safety.py --ci
@@ -19,7 +22,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: west pin drift gate
         run: |
           chmod +x scripts/check-west-pins.sh scripts/check-mender-mcu-pin.sh
@@ -30,7 +33,7 @@ jobs:
     runs-on: [self-hosted, Linux]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Identity / v2 / production contracts
         run: python3 scripts/eink-contract-checks.py
@@ -48,3 +51,26 @@ jobs:
           python3 scripts/gen-eink-frame.py --lr red blue -o /tmp/eink-zephyr/images/lr.es6f
           python3 scripts/gen-eink-frame.py --bars -o /tmp/eink-zephyr/images/bars.es6f
           python3 scripts/eink-check-fixtures.py
+
+  wamr-mender-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install package-test dependency
+        run: python -m pip install --requirement scripts/requirements-wasm-ci.txt
+
+      - name: WAMR and Mender security contracts
+        run: python scripts/check-wasm-contract.py
+
+      - name: Signed WASM package failure paths
+        env:
+          PAYLOAD: /nonexistent/ci-fallback.wasm
+        run: ./scripts/test-wasm-package.sh
