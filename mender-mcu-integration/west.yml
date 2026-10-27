@@ -26,7 +26,7 @@ manifest:
       remote: dynamicdevices
       # Full SHA required: CI/shallow west update cannot resolve abbreviated refs.
       # Shared pin policy: https://github.com/DynamicDevices/mender-mcu/blob/feature/zephyr-ram-stage-on-main/PIN-POLICY.md
-      revision: 64c10faad9d9150fd85202914c79c7d4c067dcd2
+      revision: 3228f3c7e7290be58d4fcb00e8ae17bd93d43839
       path: modules/mender-mcu
       import: true
     - name: improv-zephyr
