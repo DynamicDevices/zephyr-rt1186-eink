@@ -33,6 +33,12 @@ manifest:
       url: https://github.com/beriberikix/improv-zephyr
       revision: b65d2aaa39d48ec0fee11aa3eecd0609bbe30f3c
       path: modules/improv-zephyr
+    - name: wasm-micro-runtime
+      url: https://github.com/bytecodealliance/wasm-micro-runtime
+      # WAMR v2.4.3 development snapshot proven with Zephyr v4.4.0 on
+      # mimxrt1170_evk/mimxrt1176/cm7 and the exact ARM ELF in Renode.
+      revision: 8295a7ed80dd033362d06a1492857d4c6f9b6900
+      path: modules/wasm-micro-runtime
 
   self:
     path: mender-mcu-integration

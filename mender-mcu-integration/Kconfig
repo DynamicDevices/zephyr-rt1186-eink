@@ -25,6 +25,45 @@ endif # WIFI
 			your update module, as an alternative to the built-in zephyr-image Update module configured
 			with MENDER_ZEPHYR_IMAGE_UPDATE_MODULE
 
+	config APP_WAMR_OTA
+		bool "Signed WAMR payload Update Module"
+		default n
+		depends on APP_EINK && MENDER_MCU_CLIENT
+		select WAMR
+		select WAMR_INTERP
+		select FILE_SYSTEM
+		select MBEDTLS
+		select MBEDTLS_PSA_CRYPTO_C
+		select MBEDTLS_PSA_STATIC_KEY_SLOTS
+		select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+		select PSA_WANT_ECC_SECP_R1_256
+		select PSA_WANT_ALG_ECDSA
+		select PSA_WANT_ALG_SHA_256
+		help
+			Register the reboot-free Mender artifact type "wasm-module". Payloads
+			must use the independently signed AESLWASM envelope and are staged in
+			an inactive LittleFS slot before atomic activation.
+
+	config APP_WAMR_OTA_ROOT
+		string "WASM module slot directory"
+		default "/lfs1/eink/wasm"
+		depends on APP_WAMR_OTA
+
+	config APP_WAMR_OTA_MAX_PAYLOAD_SIZE
+		int "Maximum signed WASM payload bytes"
+		default 65536
+		range 1024 262144
+		depends on APP_WAMR_OTA
+
+	config APP_WAMR_OTA_SELFTEST
+		bool "Run WASM A/B install and rollback self-test at boot"
+		default n
+		depends on APP_WAMR_OTA && ARCH_POSIX
+		help
+			Simulator-only lifecycle test. Streams two signed packages through the
+			actual Mender callbacks and checks reboot-free activation, downgrade
+			rejection, rollback, and recovery from a corrupt active slot.
+
 	config APP_MENDER_CLIENT_ENABLE
 		bool "Start the Mender client"
 		default y

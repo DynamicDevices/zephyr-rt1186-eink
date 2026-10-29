@@ -417,7 +417,8 @@ static int stream_read_row(void *user, uint16_t y, bool right, uint8_t *row300)
 }
 #endif /* POSIX || LCD_PREVIEW */
 
-#if defined(CONFIG_APP_EINK_FULL_FRAMEBUFFER)
+#if defined(CONFIG_APP_EINK_FULL_FRAMEBUFFER) && \
+	(defined(CONFIG_APP_EINK_DISPLAY_LCD_PREVIEW) || defined(CONFIG_ARCH_POSIX))
 static int fb_read_row(void *user, uint16_t y, bool right, uint8_t *row300)
 {
 	const uint8_t *payload = user;

@@ -10,6 +10,11 @@ Zephyr firmware for Active ESL on **MIMXRT1170-EVK** (CM7) — e-ink display, So
 
 Public overlay for [mender-mcu-integration](https://github.com/mendersoftware/mender-mcu-integration): RT118x CM33 board configuration (EVK + FRDM-IMXRT1186), build/flash notes, and Hosted Mender bring-up documentation.
 
+The RT1170 lane also includes a pinned WAMR interpreter and independently
+signed, reboot-free Mender `wasm-module` updates. See
+**[WAMR + Mender OTA](docs/WAMR-MENDER-OTA.md)** for the trust model,
+simulator proofs, measured footprint, and hardware validation boundary.
+
 West dependencies (`zephyr/`, `modules/`, `bootloader/`) are **not** in this repository. Clone upstream, apply this overlay, then run `west update`.
 
 ## Prerequisites (this overlay)
@@ -56,6 +61,8 @@ Use a **separate** build directory per target (do not point EVK and FRDM at the 
 | `native_sim` + Improv (serial, emulated) | `build-native_sim-improv` | `./scripts/build-native-sim-improv.sh` | N/A (run `zephyr.exe`) | `./scripts/create-native-sim-deployment.sh` |
 | `native_sim` + Improv (BLE, emulated) | `build-native_sim-improv-ble` | `./scripts/build-native-sim-improv-ble.sh` | N/A (run `zephyr.exe --bt-dev=hciN`) | `./scripts/create-native-sim-deployment.sh` |
 | `native_sim` + e-ink (dummy_dc; optional SDL) | `build-native_sim-eink` | `./scripts/build-native-sim-eink.sh` / `eink-verify-sim.sh` | N/A (`eink show <es6f>`) | N/A |
+| RT1170 exact-ARM WAMR proof (Renode) | `build-wamr-rt1170` | `./scripts/build-wamr-rt1170.sh` / `./scripts/test-wamr-renode.sh` | N/A | Signed package only |
+| `native_sim` + Mender/WAMR lifecycle | `build-native_sim-wamr` | `./scripts/test-native-sim-wamr.sh` | N/A | A/B, downgrade, rollback, recovery proof |
 
 If you previously used the legacy shared `build/` directory, remove it before rebuilding: `rm -rf build`.
 

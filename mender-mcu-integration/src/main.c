@@ -41,6 +41,10 @@ LOG_MODULE_REGISTER(mender_app, LOG_LEVEL_DBG);
 #include "modules/noop-update-module.h"
 #endif /* CONFIG_MENDER_APP_NOOP_UPDATE_MODULE */
 
+#ifdef CONFIG_APP_WAMR_OTA
+#include "wasm/wasm_update_module.h"
+#endif
+
 #if defined(CONFIG_IMPROV_WIFI)
 #include <improv/improv_wifi.h>
 #endif
@@ -147,6 +151,16 @@ main(void) {
     if (0 != eink_store_init(CONFIG_APP_EINK_STORE_ROOT)) {
         LOG_ERR("eink store init failed");
     }
+#if defined(CONFIG_APP_WAMR_OTA)
+    if (0 != wasm_update_module_init()) {
+        LOG_ERR("WASM module store/recovery failed");
+    }
+#if defined(CONFIG_APP_WAMR_OTA_SELFTEST)
+    if (0 != wasm_update_module_selftest()) {
+        LOG_ERR("WASM module A/B lifecycle self-test failed");
+    }
+#endif
+#endif
 #if defined(CONFIG_APP_EINK_OTA_FLASH_STAGING)
     if (0 != eink_ota_stage_init()) {
         LOG_WRN("ota staging init failed");
@@ -315,6 +329,14 @@ main(void) {
     }
     LOG_INF("Update Module 'noop-update' initialized");
 #endif /* CONFIG_MENDER_APP_NOOP_UPDATE_MODULE */
+
+#ifdef CONFIG_APP_WAMR_OTA
+    if (MENDER_OK != wasm_update_module_register()) {
+        LOG_ERR("Failed to register the wasm-module Update Module");
+        goto END;
+    }
+    LOG_INF("Update Module 'wasm-module' initialized (reboot=false)");
+#endif
 
 #ifdef BUILD_INTEGRATION_TESTS
     if (MENDER_OK != test_update_module_register()) {
